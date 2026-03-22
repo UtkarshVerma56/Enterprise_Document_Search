@@ -18,3 +18,6 @@ embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-
 # Create ChromaDB
 db = Chroma.from_documents(docs, embeddings, persist_directory="./chroma_db")
 print("ChromaDB created!")
+
+!streamlit run rag_compliance_app.py --server.port 8501 & sleep 8 && cloudflared tunnel --url http://localhost:8501
+
