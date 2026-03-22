@@ -2,13 +2,14 @@
 
 Chatbot that searches your company PDFs (HR, Finance, Technical).
 
-## Quick Start
-
-1. `pip install -r requirements.txt`
-2. Add OpenAI key to `.env`
-3. Put PDFs in `documents/HR/`, `documents/Finance/`, `documents/Technical/`
-4. `streamlit run app.py`
-5. Click "Re-index" then ask questions
+## How it Works
+Upload a policy PDF
+Extract text using OCR
+Split text into chunks
+Convert text into embeddings and store in ChromaDB
+Query the system:
+Ask questions (RAG mode)
+Check compliance of a process
 
 ## Tech
 Python, Streamlit, LangChain, OpenAI, FAISS, OCR
