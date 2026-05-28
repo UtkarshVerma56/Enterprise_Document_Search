@@ -1,62 +1,52 @@
-%%writefile rag_compliance_app.py
-import streamlit as st
-from openai import OpenAI
-from langchain_community.vectorstores import Chroma
+from pdf2image import convert_from_path
+import pytesseract
+from langchain_community.document_loaders import TextLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from compliance_checker import ComplianceChecker
+from langchain_community.vectorstores import Chroma
 
-st.set_page_config(page_title="RAG Compliance Bot", page_icon="🛡")
-st.title("🛡 RAG + Compliance Checker Bot")
 
-OPENAI_API_KEY = st.text_input("Enter OpenAI API Key:", type="password")
-if not OPENAI_API_KEY:
-    st.stop()
+class DocumentProcessor:
+    def __init__(self, pdf_path):
+        self.pdf_path = pdf_path
+        self.output_text_file = "output.txt"
+        self.persist_directory = "./chroma_db"
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+    def extract_text_from_pdf(self):
+        pages = convert_from_path(self.pdf_path)
 
-# Load DB
-embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-db = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
+        text = ""
+        for i, page in enumerate(pages):
+            extracted = pytesseract.image_to_string(page)
+            text += f"\n\n--- PAGE {i+1} ---\n\n{extracted}"
 
-mode = st.radio(
-    "Select Mode:",
-    ["Normal Q&A (RAG)", "Compliance Checker"],
-    horizontal=True
-)
+        with open(self.output_text_file, "w", encoding="utf-8") as f:
+            f.write(text)
 
-query = st.text_area("Enter your query or business process description:")
+        print("Extracted preview:\n", text[:1000])
+        return self.output_text_file
 
-if st.button("Submit"):
-    with st.spinner("Processing..."):
+    def create_vector_db(self):
+        loader = TextLoader(self.output_text_file, encoding="utf-8")
+        documents = loader.load()
 
-        if mode == "Compliance Checker":
-            checker = ComplianceChecker(db, embeddings, OPENAI_API_KEY)
-            result = checker.evaluate(query)
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=200
+        )
+        docs = splitter.split_documents(documents)
 
-            st.subheader("🛡 Compliance Result (JSON)")
-            st.json(result)
+        print("Chunks:", len(docs))
 
-            st.subheader("📄 Policy Evidence Used")
-            st.text(result["evidence"])
+        embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2"
+        )
 
-        else:
-            # Normal RAG Flow
-            results = db.similarity_search(query, k=3)
-            context = "\n\n".join([d.page_content for d in results])
+        db = Chroma.from_documents(
+            docs,
+            embeddings,
+            persist_directory=self.persist_directory
+        )
 
-            prompt = f"""
-Use ONLY the context to answer.
-
-Context:
-{context}
-
-Question: {query}
-"""
-
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}]
-            )
-
-            st.subheader("Answer")
-            st.write(response.choices[0].message.content)
+        print("ChromaDB created!")
+        return db
