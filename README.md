@@ -1,6 +1,10 @@
 # Document Search Chatbot
 
-Chatbot that searches your company PDFs (HR, Finance, Technical).
+This project is a simple Retrieval-Augmented Generation (RAG) application that allows users to upload PDF documents and ask questions from them.
+
+The application extracts text from PDFs using OCR, stores document embeddings in a vector database, and retrieves the most relevant information when a question is asked. The final response is generated using OpenAI.
+
+I built this project to understand how modern AI-powered document search systems work using tools like LangChain, ChromaDB, Streamlit, and OpenAI APIs.
 
 ## How it Works
 Upload a policy PDF
@@ -12,7 +16,7 @@ Ask questions (RAG mode)
 Check compliance of a process
 
 ## Tech
-Python, Streamlit, LangChain, OpenAI, FAISS, OCR
+Python, Streamlit, LangChain, OpenAI API , OCR
 
 ## Features
 - Search PDFs by asking questions
