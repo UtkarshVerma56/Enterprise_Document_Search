@@ -1,23 +1,3 @@
-from langchain_community.document_loaders import TextLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
-
-# Load text
-loader = TextLoader("output.txt", encoding="utf-8")
-documents = loader.load()
-
-# Chunking
-splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-docs = splitter.split_documents(documents)
-print("Chunks:", len(docs))
-
-# Embedding
-embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-
-# Create ChromaDB
-db = Chroma.from_documents(docs, embeddings, persist_directory="./chroma_db")
-print("ChromaDB created!")
-
-!streamlit run rag_compliance_app.py --server.port 8501 & sleep 8 && cloudflared tunnel --url http://localhost:8501
-
+CHROMA_DB_DIR = "./chroma_db"
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+OUTPUT_TEXT_FILE = "output.txt"
